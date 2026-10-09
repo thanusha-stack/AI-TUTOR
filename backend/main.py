@@ -6,6 +6,7 @@ import os
 import uuid
 import json
 import asyncio
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 
@@ -35,7 +36,18 @@ from app.services.assessment_service import assessment_service
 from app.services.learner_model import learner_model_service
 from app.services.evaluation_service import evaluation_service
 
-app = FastAPI(title="StudyMate AI", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup/shutdown lifespan handler."""
+    init_db()
+    db = next(get_db())
+    try:
+        await seed_demo_data(db)
+    finally:
+        db.close()
+    yield  # application runs here
+
+app = FastAPI(title="StudyMate AI", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -91,17 +103,8 @@ class RevisionRequest(BaseModel):
     type: str  # flashcards, notes, summary
 
 # ============================================================
-# Startup: Initialize DB and seed demo data
+# Demo data seeding (called from lifespan)
 # ============================================================
-
-@app.on_event("startup")
-async def startup():
-    init_db()
-    db = next(get_db())
-    try:
-        await seed_demo_data(db)
-    finally:
-        db.close()
 
 
 async def seed_demo_data(db: Session):
