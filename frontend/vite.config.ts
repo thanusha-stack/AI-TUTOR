@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react'
+// @ts-ignore - @tailwindcss/vite has no bundled type declarations
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
