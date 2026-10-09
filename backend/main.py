@@ -108,6 +108,26 @@ async def seed_demo_data(db: Session):
     """Seed the database with demo data if not already present."""
     existing = db.query(User).filter(User.id == DEMO_USER_ID).first()
     if existing:
+        # If DB already has data but in-memory RAG service is empty, reload chunks
+        if not rag_service.chunks:
+            chunks = db.query(DocumentChunk).all()
+            for c in chunks:
+                emb = await rag_service.get_embedding(c.content)
+                rag_service.index_chunk(c.id, {
+                    "course_id": c.course_id,
+                    "document_id": c.document_id,
+                    "content": c.content,
+                    "source_type": c.source_type,
+                    "source_name": c.source_name,
+                    "page_number": c.page_number,
+                    "slide_number": c.slide_number,
+                    "timestamp": c.timestamp,
+                    "topic": c.topic,
+                    "subtopic": c.subtopic,
+                    "concept": c.concept,
+                    "difficulty": c.difficulty
+                }, emb)
+            print(f"[OK] Reloaded {len(rag_service.chunks)} existing chunks into RAG service")
         return
 
     # Create demo user

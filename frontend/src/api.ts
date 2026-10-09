@@ -1,6 +1,11 @@
 // StudyMate AI - API Service Layer
+// In production, set VITE_API_URL to your Render backend URL (e.g. https://studymate-ai-backend.onrender.com)
+// In development, the Vite proxy handles /api -> localhost:8000
 
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
